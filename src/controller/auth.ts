@@ -5,11 +5,15 @@ import * as jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../secretes';
 import { BadRequest } from '../exception/badrequest';
 import { ErrorCodes } from '../exception/root';
+import { UnprocessableEntity } from '../exception/validation';
+import { SignupSchema } from '../schema/user';
 
 // Define signup controller
 const signup: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 
     try {
+        SignupSchema.parse(req.body);
+
         const { name, email, password } = req.body;
 
         let user = await prismaClient.user.findFirst({ where: { email } });
@@ -26,9 +30,8 @@ const signup: RequestHandler = async (req: Request, res: Response, next: NextFun
 
         res.json(user);
 
-    } catch (error) {
-
-
+    } catch (err: any) {
+        next( new UnprocessableEntity(err?.issues, 'Unprocessable Entity', ErrorCodes.UNPROCESSABLE_ENTITY));
 
     }
 };

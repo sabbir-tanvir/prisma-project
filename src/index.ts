@@ -14,15 +14,6 @@ app.use('/api', rootRouter);
 
 export const prismaClient = new PrismaClient({
     log: ['query']
-}).$extends({
-    query: {
-        user: {
-            create({args, query}) {
-                args.data = SignupSchema.parse(args.data);
-                return query(args);
-            }
-        }
-    }
 })
 
 app.use(errorMiddleware);
