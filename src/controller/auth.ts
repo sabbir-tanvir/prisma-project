@@ -1,27 +1,36 @@
-import { Router, Request, Response, RequestHandler } from 'express';
+import { Router, Request, Response, RequestHandler, NextFunction } from 'express';
 import { prismaClient } from '..';
 import { hashSync, compareSync } from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../secretes';
+import { BadRequest } from '../exception/badrequest';
+import { ErrorCodes } from '../exception/root';
 
 // Define signup controller
-const signup: RequestHandler = async (req: Request, res: Response): Promise<void> => {
-    const { name, email, password } = req.body;
+const signup: RequestHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 
-    let user = await prismaClient.user.findFirst({ where: { email } });
-    if (user) {
-        res.status(400).json({ error: 'User already exists' });
-        return;
-    }
-    user = await prismaClient.user.create({
-        data: {
-            name,
-            email,
-            password: hashSync(password, 10)
+    try {
+        const { name, email, password } = req.body;
+
+        let user = await prismaClient.user.findFirst({ where: { email } });
+        if (user) {
+            next(new BadRequest('User already exists', ErrorCodes.USER_ALREADY_EXISTS))
         }
-    });
+        user = await prismaClient.user.create({
+            data: {
+                name,
+                email,
+                password: hashSync(password, 10)
+            }
+        });
 
-    res.json(user);
+        res.json(user);
+
+    } catch (error) {
+
+
+
+    }
 };
 
 export const login = async (req: Request, res: Response): Promise<void> => {
@@ -41,7 +50,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         id: user.id
     }, JWT_SECRET, { expiresIn: '1h' });
 
-    res.json({user, token});
+    res.json({ user, token });
 }
 
 
